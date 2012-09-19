@@ -79,7 +79,7 @@ public class PhotoIntentActivity extends Activity {
 	}
 
 	private File createImageFile() throws IOException {
-		// Create an image file name
+		// Create an image file name with 'collision-resistant file-naming' scheme
 		String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
 		String imageFileName = JPEG_FILE_PREFIX + timeStamp + "_";
 		File albumF = getAlbumDir();
@@ -88,9 +88,8 @@ public class PhotoIntentActivity extends Activity {
 	}
 
 	private File setUpPhotoFile() throws IOException {
-		
 		File f = createImageFile();
-		mCurrentPhotoPath = f.getAbsolutePath();
+//		mCurrentPhotoPath = f.getAbsolutePath();
 		
 		return f;
 	}
@@ -132,6 +131,7 @@ public class PhotoIntentActivity extends Activity {
 		mVideoView.setVisibility(View.INVISIBLE);
 	}
 
+	// Make the photo available in the Android Gallery application and to other apps.
 	private void galleryAddPic() {
 		    Intent mediaScanIntent = new Intent("android.intent.action.MEDIA_SCANNER_SCAN_FILE");
 			File f = new File(mCurrentPhotoPath);
@@ -140,18 +140,19 @@ public class PhotoIntentActivity extends Activity {
 		    this.sendBroadcast(mediaScanIntent);
 	}
 
+	// Send 'take picture' intent
 	private void dispatchTakePictureIntent(int actionCode) {
 
 		Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
 		switch(actionCode) {
-		case ACTION_TAKE_PHOTO_B:
+		case ACTION_TAKE_PHOTO_B: // Take full-size photo
 			File f = null;
 			
 			try {
 				f = setUpPhotoFile();
-				mCurrentPhotoPath = f.getAbsolutePath();
-				takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(f));
+				mCurrentPhotoPath = f.getAbsolutePath(); // An absolute path is a path that starts at a root of the file system. On Android, there is only one root: /. 
+				takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(f)); // (要準備檔案路徑並餵給 intent)
 			} catch (IOException e) {
 				e.printStackTrace();
 				f = null;
@@ -210,7 +211,7 @@ public class PhotoIntentActivity extends Activity {
 		new Button.OnClickListener() {
 		@Override
 		public void onClick(View v) {
-			dispatchTakePictureIntent(ACTION_TAKE_PHOTO_S);
+			dispatchTakePictureIntent(ACTION_TAKE_PHOTO_S); // 感覺拍下來的也是 full-size 的照片
 		}
 	};
 
@@ -234,21 +235,21 @@ public class PhotoIntentActivity extends Activity {
 		mVideoUri = null;
 
 		Button picBtn = (Button) findViewById(R.id.btnIntend);
-		setBtnListenerOrDisable( 
+		setBtnListenerOrDisable(
 				picBtn, 
 				mTakePicOnClickListener,
 				MediaStore.ACTION_IMAGE_CAPTURE
 		);
 
 		Button picSBtn = (Button) findViewById(R.id.btnIntendS);
-		setBtnListenerOrDisable( 
+		setBtnListenerOrDisable(
 				picSBtn, 
 				mTakePicSOnClickListener,
 				MediaStore.ACTION_IMAGE_CAPTURE
 		);
 
 		Button vidBtn = (Button) findViewById(R.id.btnIntendV);
-		setBtnListenerOrDisable( 
+		setBtnListenerOrDisable(
 				vidBtn, 
 				mTakeVidOnClickListener,
 				MediaStore.ACTION_VIDEO_CAPTURE
@@ -256,7 +257,7 @@ public class PhotoIntentActivity extends Activity {
 		
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.FROYO) {
 			mAlbumStorageDirFactory = new FroyoAlbumDirFactory();
-		} else {
+		} else { // Early than Android 2.2
 			mAlbumStorageDirFactory = new BaseAlbumDirFactory();
 		}
 	}
@@ -336,16 +337,13 @@ public class PhotoIntentActivity extends Activity {
 		return list.size() > 0;
 	}
 
-	private void setBtnListenerOrDisable( 
-			Button btn, 
-			Button.OnClickListener onClickListener,
-			String intentName
-	) {
+	// 如果沒有 application 可以處理你發送出去的 intent，btn 就不給按。
+	private void setBtnListenerOrDisable(Button btn, Button.OnClickListener onClickListener,
+			String intentName) {
 		if (isIntentAvailable(this, intentName)) {
-			btn.setOnClickListener(onClickListener);        	
+			btn.setOnClickListener(onClickListener);
 		} else {
-			btn.setText( 
-				getText(R.string.cannot).toString() + " " + btn.getText());
+			btn.setText(getText(R.string.cannot).toString() + " " + btn.getText());
 			btn.setClickable(false);
 		}
 	}
